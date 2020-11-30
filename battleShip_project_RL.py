@@ -14,11 +14,11 @@ class Agent:
     def __init__(self):
         self.Q = {}
         
-    #when agent recieves +1 reward (aka a hit)
+    #when agent receives +1 reward (aka a hit)
     def attackMode():
         None
         
-    #when agent recieves reward of -1 (miss)
+    #when agent receives reward of -1 (miss)
     def explore():
         None
 
