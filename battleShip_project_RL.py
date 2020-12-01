@@ -3,7 +3,7 @@
 Created on Mon Nov 30 12:17:43 2020
 
 @authors: Jared Taylor, 20075820;
-          Joe Momma, 42006969
+          Joe Momma, 69420666
 """
 class Board:
     def __init__(self):
