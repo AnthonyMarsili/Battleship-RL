@@ -182,15 +182,14 @@ class Agent:
             self.world.currentState = newState
 
 def main():
-    for x in range(1000):
-        testWorld = World()
-        testAgent = Agent(0.9, 0.01, testWorld)
-        #for ship in testWorld.playerShipLocations:
-        #    print(ship)
-        #print(testWorld.playerShipLocations)
-        for i in range(100):
-            result = testAgent.Qlearning()
-        print(testWorld.shotsTaken) # prints the actions taken in this iteration
+    testWorld = World()
+    testAgent = Agent(0.9, 0.01, testWorld)
+    #for ship in testWorld.playerShipLocations:
+    #    print(ship)
+    #print(testWorld.playerShipLocations)
+    for i in range(100):
+        result = testAgent.Qlearning()
+    print(testWorld.shotsTaken) # prints the actions taken in this iteration
 
 
 if __name__ == '__main__':
