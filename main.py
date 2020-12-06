@@ -189,7 +189,7 @@ def rotate(event):
 def subOnClick(event):
     if (aLabel.done!=True):
         if (desCount.cget('text')==0 and cruCount.cget('text')==0 and batCount.cget('text')==0 and carCount.cget('text')==0 and aLabel.start==False):
-            aLabel.aAttack = agentAttack.mainAttack(defArray.value, diff)
+            aLabel.aAttack = agentAttack.mainAttack(defArray.value, aLabel.diff)
             event.widget.complete=True
             aLabel.configure(text="Time to attack! Choose a cell above to place a missile on that cell")
             aLabel.place(x=120,y=305)
