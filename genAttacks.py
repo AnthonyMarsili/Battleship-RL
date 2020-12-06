@@ -181,17 +181,22 @@ class Agent:
 
             self.world.currentState = newState
 
-def mainAttack(userBoard):
-    print("User Ships Placed:")
-    print(userBoard)
-    for board in userBoard:
-        print(board)
-    print()
+def mainAttack(userBoard, diff):
+    
+    if (diff == 1):
+        eps = 0.6
+    elif (diff==2):
+        eps = 0.3
+    elif (diff==3):
+        eps = 0.1
+    else:
+        eps=0.01
+    
+    print(eps)
+    
     testWorld = World(userBoard)
-    testAgent = Agent(0.9, 0.01, testWorld)
+    testAgent = Agent(0.9, eps, testWorld)
     for i in range(100):
         result = testAgent.Qlearning()
         
-    print("shots taken by agent:")
-    print(testWorld.shotsTaken)
     return(testWorld.shotsTaken)
