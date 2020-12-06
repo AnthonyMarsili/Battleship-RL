@@ -1,7 +1,7 @@
 '''
     CISC 453 - Assignment 4
-    
-    Reinforcement Learning AI-GUI 
+
+    Reinforcement Learning AI-GUI
 '''
 
 from tkinter import *
@@ -26,7 +26,7 @@ def wOrL(result):
 
 #Event Handler for clicking on an attacking cell
 def onAClick(event):
-    if(aLabel.gameDone != True):    
+    if(aLabel.gameDone != True):
         if(subBut.complete==True):
             aLabel.start=True
             for y in range(0,8):
@@ -34,7 +34,7 @@ def onAClick(event):
                     if buttonsB[(x,y)] == event.widget:
                         xSpot=x
                         ySpot=y
-                       
+
             if (buttonsB[(xSpot,ySpot)].cget('text')!="X"):
                 buttonsB[(xSpot,ySpot)].configure(text="X")
                 buttonsB[(xSpot,ySpot)].shot=True
@@ -50,19 +50,19 @@ def onAClick(event):
                     aLabel.Uhits+=1
                     if(aLabel.Uhits==30):
                         wOrL('w') #You Win
-                    
+
                 else:
                     aLabel.configure(text="MISS")
                     aLabel.place(x=280,y=305)
                     buttonsB[(xSpot,ySpot)].configure(bg="cyan")
-                    
+
                 agentAtt(aLabel.clickC)
-                
-                aLabel.clickC +=1 
+
+                aLabel.clickC +=1
     else:
         aLabel.configure(text="Submit your ship placements below first!")
 
-#Event handler for Mouse hovering over attack cells 
+#Event handler for Mouse hovering over attack cells
 def onAClickE(event):
     if (event.widget.cget('bg')!="red")and(event.widget.cget('bg')!="cyan"):
         event.widget.configure(bg="#e0e0e0")
@@ -78,14 +78,14 @@ def onAClickL(event):
 def agentAtt(i):
 
     aAtt=aLabel.aAttack[i]
-    
+
     if buttonsD[(aAtt)].cget('text')=="X":
         buttonsD[(aAtt)].configure(bg="red")
         aLabel.Ahits+=1
         if (aLabel.Ahits==30):
             wOrL('l')
     else:
-        buttonsD[(aAtt)].configure(bg="cyan")    
+        buttonsD[(aAtt)].configure(bg="cyan")
 
 #Destroyer is going to be placed
 def desClick(event):
@@ -93,7 +93,7 @@ def desClick(event):
     cruiserButton.configure(bg="white")
     battleButton.configure(bg="white")
     carrierButton.configure(bg="white")
-    
+
     destroyerButton.value=True
     cruiserButton.value=False
     battleButton.value=False
@@ -131,7 +131,7 @@ def carClick(event):
     cruiserButton.value=False
     battleButton.value=False
     carrierButton.value=True
-    
+
 #Function to change rotation of ship placement
 def rotate(event):
     if event.widget.cget('text') ==u"\u2192":
@@ -140,7 +140,7 @@ def rotate(event):
     else:
         rotationButton.value = 'e'
         event.widget.configure(text=u"\u2192")
-        
+
 #When the user submits their ship placement
 def subOnClick(event):
     if (desCount.cget('text')==0 and cruCount.cget('text')==0 and batCount.cget('text')==0 and carCount.cget('text')==0 and aLabel.start==False):
@@ -157,7 +157,7 @@ def subOnClick(event):
 def subOnL(event):
     err.place(x=230,y=420)
     err.configure(text="")
-    
+
 #Function to clear board and default the values
 def clearBoard(event):
     if (subBut.complete!=True):
@@ -179,17 +179,17 @@ def onDClick(event):
             if buttonsD[(x,y)] == event.widget:
                 xSpot=x
                 ySpot=y
-    if(buttonsD[(xSpot,ySpot)].value == True):                
+    if(buttonsD[(xSpot,ySpot)].value == True):
         if destroyerButton.value == True and desCount.cget('text')!=0 and buttonsD[(xSpot,ySpot)].set == False:
             if rotationButton.value =='e':
                 buttonsD[(xSpot,ySpot)].configure(text="X")
                 buttonsD[(xSpot+1,ySpot)].configure(text="X")
                 buttonsD[(xSpot,ySpot)].set= True
                 buttonsD[(xSpot+1,ySpot)].set= True
-                
+
                 ship=[(xSpot,ySpot),(xSpot+1,ySpot)]
                 defArray.value.append(ship)
-                
+
                 if (desCount.cget('text')==4):
                     desCount.configure(text=3)
                 elif (desCount.cget('text')==3):
@@ -198,16 +198,16 @@ def onDClick(event):
                     desCount.configure(text=1)
                 elif (desCount.cget('text')==1):
                     desCount.configure(text=0)
-                    
+
             else:
                 buttonsD[(xSpot,ySpot)].configure(text="X")
                 buttonsD[(xSpot,ySpot+1)].configure(text="X")
                 buttonsD[(xSpot,ySpot)].set= True
                 buttonsD[(xSpot,ySpot+1)].set= True
-                
+
                 ship=[(xSpot,ySpot),(xSpot,ySpot+1)]
                 defArray.value.append(ship)
-                
+
                 if (desCount.cget('text')==4):
                     desCount.configure(text=3)
                 elif (desCount.cget('text')==3):
@@ -216,7 +216,7 @@ def onDClick(event):
                     desCount.configure(text=1)
                 elif (desCount.cget('text')==1):
                     desCount.configure(text=0)
-                
+
         elif cruiserButton.value == True and cruCount.cget('text')!=0 and buttonsD[(xSpot,ySpot)].set == False:
             if rotationButton.value =='e' and err.cget('text')!="No intersecting ships!":
                 buttonsD[(xSpot,ySpot)].configure(text="X")
@@ -225,10 +225,10 @@ def onDClick(event):
                 buttonsD[(xSpot,ySpot)].set= True
                 buttonsD[(xSpot+1,ySpot)].set= True
                 buttonsD[(xSpot+2,ySpot)].set= True
-                
+
                 ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+2,ySpot)]
                 defArray.value.append(ship)
-                
+
                 if (cruCount.cget('text')==3):
                     cruCount.configure(text=2)
                 elif (cruCount.cget('text')==2):
@@ -242,10 +242,10 @@ def onDClick(event):
                 buttonsD[(xSpot,ySpot)].set= True
                 buttonsD[(xSpot,ySpot+1)].set= True
                 buttonsD[(xSpot,ySpot+2)].set= True
-                
+
                 ship=[(xSpot,ySpot),(xSpot,ySpot+1),(xSpot,ySpot+2)]
                 defArray.value.append(ship)
-                
+
                 if (cruCount.cget('text')==3):
                     cruCount.configure(text=2)
                 elif (cruCount.cget('text')==2):
@@ -262,11 +262,11 @@ def onDClick(event):
                 buttonsD[(xSpot+1,ySpot)].set= True
                 buttonsD[(xSpot+2,ySpot)].set= True
                 buttonsD[(xSpot+3,ySpot)].set= True
-                
-                ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+1,ySpot),(xSpot+3,ySpot)]
+
+                ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+2,ySpot),(xSpot+3,ySpot)]
                 defArray.value.append(ship)
-                
-                
+
+
                 if (batCount.cget('text')==2):
                     batCount.configure(text=1)
                 elif (batCount.cget('text')==1):
@@ -280,15 +280,15 @@ def onDClick(event):
                 buttonsD[(xSpot,ySpot+1)].set= True
                 buttonsD[(xSpot,ySpot+2)].set= True
                 buttonsD[(xSpot,ySpot+3)].set= True
-                
+
                 ship=[(xSpot,ySpot),(xSpot,ySpot+1),(xSpot,ySpot+2),(xSpot,ySpot+3)]
                 defArray.value.append(ship)
-                
+
                 if (batCount.cget('text')==2):
                     batCount.configure(text=1)
                 elif (batCount.cget('text')==1):
                     batCount.configure(text=0)
-        
+
         elif carrierButton.value == True and carCount.cget('text')!=0 and buttonsD[(xSpot,ySpot)].set == False:
             if rotationButton.value =='e' and err.cget('text')!="No intersecting ships!":
                 buttonsD[(xSpot,ySpot)].configure(text="X")
@@ -301,10 +301,10 @@ def onDClick(event):
                 buttonsD[(xSpot+2,ySpot)].set= True
                 buttonsD[(xSpot+3,ySpot)].set= True
                 buttonsD[(xSpot+4,ySpot)].set= True
-                
+
                 ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+2,ySpot),(xSpot+3,ySpot),(xSpot+4,ySpot)]
                 defArray.value.append(ship)
-                
+
                 if (carCount.cget('text')==1):
                     carCount.configure(text=0)
             if rotationButton.value =='s' and err.cget('text')!="No intersecting ships!":
@@ -318,17 +318,17 @@ def onDClick(event):
                 buttonsD[(xSpot,ySpot+2)].set= True
                 buttonsD[(xSpot,ySpot+3)].set= True
                 buttonsD[(xSpot,ySpot+4)].set= True
-                
+
                 ship=[(xSpot,ySpot),(xSpot,ySpot+1),(xSpot,ySpot+2),(xSpot,ySpot+3),(xSpot,ySpot+4)]
-                
-                
+
+
                 if (carCount.cget('text')==1):
                     carCount.configure(text=0)
-        
+
 
 #Hovering over ship placement board
 def onDClickE(event):
-    
+
     if(subBut.complete != True):
         xSpot=0
         ySpot=0
@@ -337,7 +337,7 @@ def onDClickE(event):
                 if buttonsD[(x,y)] == event.widget:
                     xSpot=x
                     ySpot=y
-        
+
         if (destroyerButton.value==True):
             if (rotationButton.value == 'e'):
                 if (xSpot == 7):
@@ -345,38 +345,38 @@ def onDClickE(event):
                     buttonsD[(xSpot,ySpot)].value=False
                 else:
                     inv=False
-                    for i in range (0,2):    
+                    for i in range (0,2):
                         if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
                             inv=True
-                            
+
                     if(inv!=True):
                         buttonsD[(xSpot,ySpot)].value=True
                     else:
                         buttonsD[(xSpot,ySpot)].value=False
                         err.configure(text="No intersecting ships!")
-                        
+
                     buttonsD[(xSpot,ySpot)].configure(text="X")
-                    buttonsD[(xSpot+1,ySpot)].configure(text="X")                     
-    
+                    buttonsD[(xSpot+1,ySpot)].configure(text="X")
+
             else:
                 if (ySpot == 7):
                     buttonsD[(xSpot,ySpot)].configure(bg="red")
                     buttonsD[(xSpot,ySpot)].value=False
                 else:
                     inv=False
-                    for i in range (0,2):    
+                    for i in range (0,2):
                         if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
                             inv=True
-                            
+
                     if(inv!=True):
                         buttonsD[(xSpot,ySpot)].value=True
                     else:
                         buttonsD[(xSpot,ySpot)].value=False
                         err.configure(text="No intersecting ships!")
-                        
+
                     buttonsD[(xSpot,ySpot)].configure(text="X")
                     buttonsD[(xSpot,ySpot+1)].configure(text="X")
-                
+
         elif (cruiserButton.value==True):
             if (rotationButton.value == 'e'):
                 if (xSpot >= 6):
@@ -386,21 +386,21 @@ def onDClickE(event):
                         buttonsD[(xSpot+1,ySpot)].configure(bg="red")
                 else:
                     inv=False
-                    for i in range (0,3):    
+                    for i in range (0,3):
                         if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
                             inv=True
-                            
+
                     if(inv!=True):
                         buttonsD[(xSpot,ySpot)].value=True
                     else:
                         buttonsD[(xSpot,ySpot)].value=False
                         err.configure(text="No intersecting ships!")
-                        
+
                     buttonsD[(xSpot,ySpot)].value=True
                     buttonsD[(xSpot,ySpot)].configure(text="X")
                     buttonsD[(xSpot+1,ySpot)].configure(text="X")
                     buttonsD[(xSpot+2,ySpot)].configure(text="X")
-                    
+
             else:
                 if (ySpot >= 6):
                     buttonsD[(xSpot,ySpot)].value=False
@@ -409,21 +409,21 @@ def onDClickE(event):
                         buttonsD[(xSpot,ySpot+1)].configure(bg="red")
                 else:
                     inv=False
-                    for i in range (0,3):    
+                    for i in range (0,3):
                         if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
                             inv=True
-                            
+
                     if(inv!=True):
                         buttonsD[(xSpot,ySpot)].value=True
                     else:
                         buttonsD[(xSpot,ySpot)].value=False
                         err.configure(text="No intersecting ships!")
-                        
+
                     buttonsD[(xSpot,ySpot)].value=True
                     buttonsD[(xSpot,ySpot)].configure(text="X")
                     buttonsD[(xSpot,ySpot+1)].configure(text="X")
                     buttonsD[(xSpot,ySpot+2)].configure(text="X")
-                
+
         if (battleButton.value==True):
             if (rotationButton.value == 'e'):
                 if (xSpot >= 5):
@@ -435,22 +435,22 @@ def onDClickE(event):
                             buttonsD[(xSpot+2,ySpot)].configure(bg="red")
                 else:
                     inv=False
-                    for i in range (0,4):    
+                    for i in range (0,4):
                         if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
                             inv=True
-                            
+
                     if(inv!=True):
                         buttonsD[(xSpot,ySpot)].value=True
                     else:
                         buttonsD[(xSpot,ySpot)].value=False
                         err.configure(text="No intersecting ships!")
-                        
+
                     buttonsD[(xSpot,ySpot)].value=True
                     buttonsD[(xSpot,ySpot)].configure(text="X")
                     buttonsD[(xSpot+1,ySpot)].configure(text="X")
                     buttonsD[(xSpot+2,ySpot)].configure(text="X")
                     buttonsD[(xSpot+3,ySpot)].configure(text="X")
-                
+
             else:
                 if (ySpot >= 5):
                     buttonsD[(xSpot,ySpot)].value=False
@@ -461,22 +461,22 @@ def onDClickE(event):
                             buttonsD[(xSpot,ySpot+2)].configure(bg="red")
                 else:
                     inv=False
-                    for i in range (0,4):    
+                    for i in range (0,4):
                         if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
                             inv=True
-                            
+
                     if(inv!=True):
                         buttonsD[(xSpot,ySpot)].value=True
                     else:
                         buttonsD[(xSpot,ySpot)].value=False
                         err.configure(text="No intersecting ships!")
-                        
+
                     buttonsD[(xSpot,ySpot)].value=True
                     buttonsD[(xSpot,ySpot)].configure(text="X")
                     buttonsD[(xSpot,ySpot+1)].configure(text="X")
                     buttonsD[(xSpot,ySpot+2)].configure(text="X")
                     buttonsD[(xSpot,ySpot+3)].configure(text="X")
-                
+
         if (carrierButton.value==True):
                 if (rotationButton.value == 'e'):
                     if (xSpot >= 4):
@@ -488,26 +488,26 @@ def onDClickE(event):
                                 buttonsD[(xSpot+2,ySpot)].configure(bg="red")
                                 if(xSpot<5):
                                     buttonsD[(xSpot+3,ySpot)].configure(bg="red")
-                
+
                     else:
                         inv=False
-                        for i in range (0,5):    
+                        for i in range (0,5):
                             if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
                                 inv=True
-                                
+
                         if(inv!=True):
                             buttonsD[(xSpot,ySpot)].value=True
                         else:
                             buttonsD[(xSpot,ySpot)].value=False
                             err.configure(text="No intersecting ships!")
-                        
+
                         buttonsD[(xSpot,ySpot)].value=True
                         buttonsD[(xSpot,ySpot)].configure(text="X")
                         buttonsD[(xSpot+1,ySpot)].configure(text="X")
                         buttonsD[(xSpot+2,ySpot)].configure(text="X")
                         buttonsD[(xSpot+3,ySpot)].configure(text="X")
                         buttonsD[(xSpot+4,ySpot)].configure(text="X")
-                        
+
                 else:
                     if (ySpot >= 4):
                         buttonsD[(xSpot,ySpot)].value=False
@@ -520,24 +520,24 @@ def onDClickE(event):
                                     buttonsD[(xSpot,ySpot+3)].configure(bg="red")
                     else:
                         inv=False
-                        for i in range (0,5):    
+                        for i in range (0,5):
                             if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
                                 inv=True
-                                
+
                         if(inv!=True):
                             buttonsD[(xSpot,ySpot)].value=True
                         else:
                             buttonsD[(xSpot,ySpot)].value=False
                             err.configure(text="No intersecting ships!")
-                            
+
                         buttonsD[(xSpot,ySpot)].value=True
                         buttonsD[(xSpot,ySpot)].configure(text="X")
                         buttonsD[(xSpot,ySpot+1)].configure(text="X")
                         buttonsD[(xSpot,ySpot+2)].configure(text="X")
                         buttonsD[(xSpot,ySpot+3)].configure(text="X")
                         buttonsD[(xSpot,ySpot+4)].configure(text="X")
-            
-    
+
+
 #Mouse leaves a cell in the board ship placement grid
 def onDClickL(event):
     if(subBut.complete != True):
@@ -548,7 +548,7 @@ def onDClickL(event):
                 if buttonsD[(x,y)] == event.widget:
                     xSpot=x
                     ySpot=y
-        
+
         if (destroyerButton.value==True):
             if (rotationButton.value == 'e'):
                 if (xSpot == 7):
@@ -557,10 +557,10 @@ def onDClickL(event):
                     if (buttonsD[(xSpot,ySpot)].set != True):
                         buttonsD[(xSpot,ySpot)].configure(text="")
                     if (buttonsD[(xSpot+1,ySpot)].set != True):
-                        buttonsD[(xSpot+1,ySpot)].configure(text="")          
+                        buttonsD[(xSpot+1,ySpot)].configure(text="")
                     err.configure(text="")
-                    
-            
+
+
             else:
                 if (ySpot == 7):
                     buttonsD[(xSpot,ySpot)].configure(bg="white")
@@ -570,7 +570,7 @@ def onDClickL(event):
                     if (buttonsD[(xSpot,ySpot+1)].set != True):
                         buttonsD[(xSpot,ySpot+1)].configure(text="")
                     err.configure(text="")
-                
+
         elif (cruiserButton.value==True):
             if (rotationButton.value == 'e'):
                 if (xSpot >= 6):
@@ -578,7 +578,7 @@ def onDClickL(event):
                     if(xSpot < 7):
                         buttonsD[(xSpot+1,ySpot)].configure(bg="white")
                 else:
-                    
+
                     if (buttonsD[(xSpot,ySpot)].set != True):
                         buttonsD[(xSpot,ySpot)].configure(text="")
                     if (buttonsD[(xSpot+1,ySpot)].set != True):
@@ -586,7 +586,7 @@ def onDClickL(event):
                     if (buttonsD[(xSpot+2,ySpot)].set != True):
                         buttonsD[(xSpot+2,ySpot)].configure(text="")
                     err.configure(text="")
-                    
+
             else:
                 if (ySpot >= 6):
                     buttonsD[(xSpot,ySpot)].configure(bg="white")
@@ -600,7 +600,7 @@ def onDClickL(event):
                     if (buttonsD[(xSpot,ySpot+2)].set != True):
                         buttonsD[(xSpot,ySpot+2)].configure(text="")
                     err.configure(text="")
-                
+
         if (battleButton.value==True):
             if (rotationButton.value == 'e'):
                 if (xSpot >= 5):
@@ -619,7 +619,7 @@ def onDClickL(event):
                     if (buttonsD[(xSpot+3,ySpot)].set != True):
                         buttonsD[(xSpot+3,ySpot)].configure(text="")
                     err.configure(text="")
-                
+
             else:
                 if (ySpot >= 5):
                     buttonsD[(xSpot,ySpot)].configure(bg="white")
@@ -637,7 +637,7 @@ def onDClickL(event):
                     if (buttonsD[(xSpot,ySpot+3)].set != True):
                         buttonsD[(xSpot,ySpot+3)].configure(text="")
                     err.configure(text="")
-                
+
         if (carrierButton.value==True):
                 if (rotationButton.value == 'e'):
                     if (xSpot >= 4):
@@ -648,7 +648,7 @@ def onDClickL(event):
                                 buttonsD[(xSpot+2,ySpot)].configure(bg="white")
                                 if(xSpot<5):
                                     buttonsD[(xSpot+3,ySpot)].configure(bg="white")
-                    
+
                     else:
                         if (buttonsD[(xSpot,ySpot)].set != True):
                             buttonsD[(xSpot,ySpot)].configure(text="")
@@ -661,7 +661,7 @@ def onDClickL(event):
                         if (buttonsD[(xSpot+4,ySpot)].set != True):
                             buttonsD[(xSpot+4,ySpot)].configure(text="")
                         err.configure(text="")
-                        
+
                 else:
                     if (ySpot >= 4):
                         buttonsD[(xSpot,ySpot)].configure(bg="white")
@@ -683,7 +683,7 @@ def onDClickL(event):
                         if (buttonsD[(xSpot,ySpot+4)].set != True):
                             buttonsD[(xSpot,ySpot+4)].configure(text="")
                         err.configure(text="")
-     
+
 
 
 #Setting up Game Board---------------------------------------------------------------------------------
@@ -719,7 +719,7 @@ for yI in range (0,8):
         buttonsD[coOrd].bind("<Button-1>", onDClick)
         buttonsD[coOrd].bind("<Enter>", onDClickE)
         buttonsD[coOrd].bind("<Leave>", onDClickL)
-        
+
 
 #Button to change placement to a destroyer
 destroyerButton = Button(root, width=8,height=1, bg="#bababa", activebackground='#bababa', text="Destroyer")
