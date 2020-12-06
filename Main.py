@@ -9,13 +9,17 @@
 
 import numpy as np
 import random
+import board as brd
 from itertools import combinations
+import time
 
 class World:
     def __init__(self):
+        self.board = brd.Board()
         self.gameHeight = 8
-        self.gameWidth = 8
-        self.playerShipLocations = [ [(1,2),(1,3),(1,4)], [(3,4),(3,3),(3,2)], [(5,5),(5,6),(5,7)] ]
+        self.gameWidth = 8        #[ [(1,2),(1,3),(1,4)], [(3,4),(3,3),(3,2)], [(5,5),(5,6),(5,7)] ]
+        self.playerShipLocations = self.board.ships
+        #self.playerShipLocations = [[(6, 0), (5, 0), (4, 0), (3, 0), (2, 0)], [(5, 3), (5, 4), (5, 5), (5, 6)], [(1, 7), (1, 6), (1, 5), (1, 4)], [(7, 5), (7, 6), (7, 7)], [(6, 3), (6, 2), (6, 1)], [(1, 1), (1, 2), (1, 3)], [(7, 3), (7, 2)], [(3, 6), (3, 5)], [(3, 2), (3, 1)], [(4, 5), (4, 4)]]
         self.shotsTaken = []
         self.possibleStates = self.getPossibleStates()
         self.startState = (0,)
@@ -160,7 +164,11 @@ class Agent:
             reward = newStateAndReward[1]
             # visited.append(newState) # say we vsited that state
             self.numOfSteps += 1
+
+            if newState == self.world.goalState: # if the next state is the goal, break
+                return converged #currently not using this
             # find best action from S'
+
             bestAction = self.getBestAction(newState)
 
             oldQ = self.Q_values[self.world.currentState][chosenAction]
@@ -173,15 +181,15 @@ class Agent:
 
             self.world.currentState = newState
 
-            if self.world.currentState == self.world.goalState: # if the next state is the goal, break
-                return converged #currently not using this
-
 def main():
-    testWorld = World()
-    testAgent = Agent(0.9, 0.01, testWorld)
-
-    for i in range(100):
-        result = testAgent.Qlearning()
+    for x in range(1000):
+        testWorld = World()
+        testAgent = Agent(0.9, 0.01, testWorld)
+        #for ship in testWorld.playerShipLocations:
+        #    print(ship)
+        #print(testWorld.playerShipLocations)
+        for i in range(100):
+            result = testAgent.Qlearning()
         print(testWorld.shotsTaken) # prints the actions taken in this iteration
 
 
