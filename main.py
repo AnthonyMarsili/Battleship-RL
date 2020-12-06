@@ -1,191 +1,805 @@
-# State space is the indexes (+1) of the ship locations list that are sunk
-# The states are represented as tuples (e.x. the state (2,4) represents the state of the game where the 2nd and 4th ships are sunk)
-# The initial state is no ships sunk, and that is represented as the tuple (0,)
-# The action space is the set of possible shots the agent can take in each staticmethod
-# Possible shots in a state are determined by subtracting the coordinates of the sunk ships from the list of all the coordinates on the board
-# The actions that were already taken are also accounted for when choosing which action to take from a given state
-# Adjusting the learning and exploring rate (exploring rate especially) can allow us to have different difficulties
-# Right now, it prints the list of actions it would take each iteration to get to the goal state (all ships sunk)
+'''
+    CISC 453 - Assignment 4
+    
+    Reinforcement Learning AI-GUI 
+'''
 
-import numpy as np
-import random
+from tkinter import *
 import board as brd
-from itertools import combinations
+import copy
+import genAttacks as agentAttack
 
-class World:
-    def __init__(self):
-        self.board = brd.Board()
-        self.gameHeight = 8
-        self.gameWidth = 8        #[ [(1,2),(1,3),(1,4)], [(3,4),(3,3),(3,2)], [(5,5),(5,6),(5,7)] ]
-        self.playerShipLocations = self.board.ships
-        self.shotsTaken = []
-        self.possibleStates = self.getPossibleStates()
-        self.startState = (0,)
-        self.currentState = self.startState
-        self.goalState = self.determineGoalState()
+root = Tk()
+root.geometry("560x800")
+root.minsize(560,800)
+root.maxsize(560,800)
+C = Canvas(root, bg= 'blue', height=800, width=560)
+bgImg = PhotoImage(master = C, file='battleshipBG.png')
+bgLabel = Label(root, image=bgImg)
+bgLabel.place(x=0, y=0, relwidth=1, relheight=1)
 
-    def getPossibleStates(self):
-        num = 1 # initializes the number of possible states
-        states = [(0,)] # a list of lists indicating the different ships that can be sunk, making up a state
-        numberedShipLocations = []
+#Attacking placement--------------------------------------------------------
 
-        for i in range(len(self.playerShipLocations)):
-            numberedShipLocations.append(i+1)
+#Function to display if User won or Lost against the Agent
+def wOrL(result):
+    aLabel.gameDone = True
+    if result == 'w':
+        aLabel.gameResult="win"
+    else:
+        aLabel.gameResult="lose"
 
-        for x in range(len(self.playerShipLocations)):
-            comb = list(combinations(numberedShipLocations, x + 1))
-            num += len(comb)
-            for y in range(len(comb)):
-                states.append(comb[y])
+#Event Handler for clicking on an attacking cell
+def onAClick(event):
+    if(aLabel.gameDone != True):    
+        if(subBut.complete==True):
+            aLabel.start=True
+            for y in range(0,8):
+                for x in range (0,8):
+                    if buttonsB[(x,y)] == event.widget:
+                        xSpot=x
+                        ySpot=y
+                       
+            if (buttonsB[(xSpot,ySpot)].cget('text')!="X"):
+                buttonsB[(xSpot,ySpot)].configure(text="X")
+                buttonsB[(xSpot,ySpot)].shot=True
+                hit = False
+                for ship in agentSL:
+                    for piece in ship:
+                        if (xSpot,ySpot) == piece:
+                            hit=True
+                if (hit==True):
+                    aLabel.configure(text="HIT!")
+                    aLabel.place(x=280,y=305)
+                    buttonsB[(xSpot,ySpot)].configure(bg="red")
+                    aLabel.Uhits+=1
+                    if(aLabel.Uhits==30):
+                        wOrL('w') #You Win
+                    
+                else:
+                    aLabel.configure(text="MISS")
+                    aLabel.place(x=280,y=305)
+                    buttonsB[(xSpot,ySpot)].configure(bg="cyan")
+                    
+                agentAtt(aLabel.clickC)
+                
+                aLabel.clickC +=1 
+    else:
+        aLabel.configure(text="Submit your ship placements below first!")
 
-        return states # this is the list of tuples that represent the different states. E.x. [ (0,), (1,), (2,), (3,), (1,2), (1,3), (2,3), (1,2,3) ]
+#Event handler for Mouse hovering over attack cells 
+def onAClickE(event):
+    if (event.widget.cget('bg')!="red")and(event.widget.cget('bg')!="cyan"):
+        event.widget.configure(bg="#e0e0e0")
 
-    def determineGoalState(self):
-        goalState = []
-        for i in range(len(self.playerShipLocations)):
-            goalState.append(i+1)
+#Event handler for mouse leaving hover area of attack cells
+def onAClickL(event):
+    if (event.widget.cget('bg')!="red")and(event.widget.cget('bg')!="cyan"):
+        event.widget.configure(bg="white")
 
-        return tuple(goalState)
+#Defensive placement---------------------------------------------------------------------
 
-    def getPossibleActions(self):
-        possibleActions = []
+#Function to place Agent's missiles
+def agentAtt(i):
 
-        for x in range(self.gameHeight):
-            for y in range(self.gameWidth):
-                #if [x,y] not in self.shotsTaken:
-                possibleActions.append((x,y))
+    aAtt=aLabel.aAttack[i]
+    
+    if buttonsD[(aAtt)].cget('text')=="X":
+        buttonsD[(aAtt)].configure(bg="red")
+        aLabel.Ahits+=1
+        if (aLabel.Ahits==30):
+            wOrL('l')
+    else:
+        buttonsD[(aAtt)].configure(bg="cyan")    
 
-        return possibleActions # this is a list of all the coordinates on the grid
+#Destroyer is going to be placed
+def desClick(event):
+    destroyerButton.configure(bg="#bababa")
+    cruiserButton.configure(bg="white")
+    battleButton.configure(bg="white")
+    carrierButton.configure(bg="white")
+    
+    destroyerButton.value=True
+    cruiserButton.value=False
+    battleButton.value=False
+    carrierButton.value=False
 
-    def moveToNewState(self, action):
-        self.shotsTaken.append(action) # register this actions as taken
-        sunkNewShip = True # initalize
-        reward = -1 # initalize and will be the reward if the shot is a miss
-        newState = self.currentState # initalize
+#Cruiser is going to be Placed
+def cruClick(event):
+    destroyerButton.configure(bg="white")
+    cruiserButton.configure(bg="#bababa")
+    battleButton.configure(bg="white")
+    carrierButton.configure(bg="white")
+    destroyerButton.value=False
+    cruiserButton.value=True
+    battleButton.value=False
+    carrierButton.value=False
 
-        # this function should check to see if a new ship was sunk and update the state accordingly
+#BattleShip is going to be placed
+def batClick(event):
+    destroyerButton.configure(bg="white")
+    cruiserButton.configure(bg="white")
+    battleButton.configure(bg="#bababa")
+    carrierButton.configure(bg="white")
+    destroyerButton.value=False
+    cruiserButton.value=False
+    battleButton.value=True
+    carrierButton.value=False
 
-        for i in range(len(self.playerShipLocations)):
-            if action in self.playerShipLocations[i]: # if we hit a ship
-                reward = 0 # will be the reward if the shot is a hit
-                for coordinate in self.playerShipLocations[i]: # check to see if we sunk that ship
-                    if coordinate not in self.shotsTaken: # if we are still missing one, they still get the reward, but this does not register as a new ship being sunk, and so we do not move to the next state
-                        sunkNewShip = False
-                        break
-                #newState = self.currentState + (i+1,) # NEED A NEW WAY TO MOVE TO THE NEXT STATE
-                if sunkNewShip:
-                    reward = 1 # will be the reward if the shot was a hit and a ship was sunk
-                    if self.currentState == self.startState: # still need a better way to move to next state
-                        newState = (i+1,)
+#Carrier is going to be placed
+def carClick(event):
+    destroyerButton.configure(bg="white")
+    cruiserButton.configure(bg="white")
+    battleButton.configure(bg="white")
+    carrierButton.configure(bg="#bababa")
+    destroyerButton.value=False
+    cruiserButton.value=False
+    battleButton.value=False
+    carrierButton.value=True
+    
+#Function to change rotation of ship placement
+def rotate(event):
+    if event.widget.cget('text') ==u"\u2192":
+        rotationButton.value = 's'
+        event.widget.configure(text=u"\u2193")
+    else:
+        rotationButton.value = 'e'
+        event.widget.configure(text=u"\u2192")
+        
+#When the user submits their ship placement
+def subOnClick(event):
+    if (desCount.cget('text')==0 and cruCount.cget('text')==0 and batCount.cget('text')==0 and carCount.cget('text')==0 and aLabel.start==False):
+        print(defArray.value)
+        aLabel.aAttack = agentAttack.mainAttack(defArray.value)
+        event.widget.complete=True
+        aLabel.configure(text="Time to attack! Choose a cell above to place a missile on that cell")
+        aLabel.place(x=120,y=305)
+    else:
+        err.place(x=220,y=420)
+        err.configure(text="Not all ships are placed")
+
+#Event on leaving submit button w mouse
+def subOnL(event):
+    err.place(x=230,y=420)
+    err.configure(text="")
+    
+#Function to clear board and default the values
+def clearBoard(event):
+    if (subBut.complete!=True):
+        for y in range(0,8):
+            for x in range(0,8):
+                buttonsD[(x,y)].configure(text="")
+                buttonsD[(x,y)].value = True
+                buttonsD[(x,y)].set = False
+        desCount.configure(text=4)
+        cruCount.configure(text=3)
+        batCount.configure(text=2)
+        carCount.configure(text=1)
+
+#Function for placing the ships
+shipsPlaced=[]
+def onDClick(event):
+    for y in range(0,8):
+        for x in range (0,8):
+            if buttonsD[(x,y)] == event.widget:
+                xSpot=x
+                ySpot=y
+    if(buttonsD[(xSpot,ySpot)].value == True):                
+        if destroyerButton.value == True and desCount.cget('text')!=0 and buttonsD[(xSpot,ySpot)].set == False:
+            if rotationButton.value =='e':
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot+1,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot+1,ySpot)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot+1,ySpot)]
+                defArray.value.append(ship)
+                
+                if (desCount.cget('text')==4):
+                    desCount.configure(text=3)
+                elif (desCount.cget('text')==3):
+                    desCount.configure(text=2)
+                elif (desCount.cget('text')==2):
+                    desCount.configure(text=1)
+                elif (desCount.cget('text')==1):
+                    desCount.configure(text=0)
+                    
+            else:
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot,ySpot+1)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot,ySpot+1)]
+                defArray.value.append(ship)
+                
+                if (desCount.cget('text')==4):
+                    desCount.configure(text=3)
+                elif (desCount.cget('text')==3):
+                    desCount.configure(text=2)
+                elif (desCount.cget('text')==2):
+                    desCount.configure(text=1)
+                elif (desCount.cget('text')==1):
+                    desCount.configure(text=0)
+                
+        elif cruiserButton.value == True and cruCount.cget('text')!=0 and buttonsD[(xSpot,ySpot)].set == False:
+            if rotationButton.value =='e' and err.cget('text')!="No intersecting ships!":
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot+1,ySpot)].configure(text="X")
+                buttonsD[(xSpot+2,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot+1,ySpot)].set= True
+                buttonsD[(xSpot+2,ySpot)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+2,ySpot)]
+                defArray.value.append(ship)
+                
+                if (cruCount.cget('text')==3):
+                    cruCount.configure(text=2)
+                elif (cruCount.cget('text')==2):
+                    cruCount.configure(text=1)
+                elif (cruCount.cget('text')==1):
+                    cruCount.configure(text=0)
+            elif rotationButton.value =='s' and err.cget('text')!="No intersecting ships!":
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                buttonsD[(xSpot,ySpot+2)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot,ySpot+1)].set= True
+                buttonsD[(xSpot,ySpot+2)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot,ySpot+1),(xSpot,ySpot+2)]
+                defArray.value.append(ship)
+                
+                if (cruCount.cget('text')==3):
+                    cruCount.configure(text=2)
+                elif (cruCount.cget('text')==2):
+                    cruCount.configure(text=1)
+                elif (cruCount.cget('text')==1):
+                    cruCount.configure(text=0)
+        elif battleButton.value == True and batCount.cget('text')!=0 and buttonsD[(xSpot,ySpot)].set == False:
+            if rotationButton.value =='e' and err.cget('text')!="No intersecting ships!":
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot+1,ySpot)].configure(text="X")
+                buttonsD[(xSpot+2,ySpot)].configure(text="X")
+                buttonsD[(xSpot+3,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot+1,ySpot)].set= True
+                buttonsD[(xSpot+2,ySpot)].set= True
+                buttonsD[(xSpot+3,ySpot)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+1,ySpot),(xSpot+3,ySpot)]
+                defArray.value.append(ship)
+                
+                
+                if (batCount.cget('text')==2):
+                    batCount.configure(text=1)
+                elif (batCount.cget('text')==1):
+                    batCount.configure(text=0)
+            elif rotationButton.value =='s' and err.cget('text')!="No intersecting ships!":
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                buttonsD[(xSpot,ySpot+2)].configure(text="X")
+                buttonsD[(xSpot,ySpot+3)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot,ySpot+1)].set= True
+                buttonsD[(xSpot,ySpot+2)].set= True
+                buttonsD[(xSpot,ySpot+3)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot,ySpot+1),(xSpot,ySpot+2),(xSpot,ySpot+3)]
+                defArray.value.append(ship)
+                
+                if (batCount.cget('text')==2):
+                    batCount.configure(text=1)
+                elif (batCount.cget('text')==1):
+                    batCount.configure(text=0)
+        
+        elif carrierButton.value == True and carCount.cget('text')!=0 and buttonsD[(xSpot,ySpot)].set == False:
+            if rotationButton.value =='e' and err.cget('text')!="No intersecting ships!":
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot+1,ySpot)].configure(text="X")
+                buttonsD[(xSpot+2,ySpot)].configure(text="X")
+                buttonsD[(xSpot+3,ySpot)].configure(text="X")
+                buttonsD[(xSpot+4,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot+1,ySpot)].set= True
+                buttonsD[(xSpot+2,ySpot)].set= True
+                buttonsD[(xSpot+3,ySpot)].set= True
+                buttonsD[(xSpot+4,ySpot)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+2,ySpot),(xSpot+3,ySpot),(xSpot+4,ySpot)]
+                defArray.value.append(ship)
+                
+                if (carCount.cget('text')==1):
+                    carCount.configure(text=0)
+            if rotationButton.value =='s' and err.cget('text')!="No intersecting ships!":
+                buttonsD[(xSpot,ySpot)].configure(text="X")
+                buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                buttonsD[(xSpot,ySpot+2)].configure(text="X")
+                buttonsD[(xSpot,ySpot+3)].configure(text="X")
+                buttonsD[(xSpot,ySpot+4)].configure(text="X")
+                buttonsD[(xSpot,ySpot)].set= True
+                buttonsD[(xSpot,ySpot+1)].set= True
+                buttonsD[(xSpot,ySpot+2)].set= True
+                buttonsD[(xSpot,ySpot+3)].set= True
+                buttonsD[(xSpot,ySpot+4)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot,ySpot+1),(xSpot,ySpot+2),(xSpot,ySpot+3),(xSpot,ySpot+4)]
+                
+                
+                if (carCount.cget('text')==1):
+                    carCount.configure(text=0)
+        
+
+#Hovering over ship placement board
+def onDClickE(event):
+    
+    if(subBut.complete != True):
+        xSpot=0
+        ySpot=0
+        for y in range(0,8):
+            for x in range (0,8):
+                if buttonsD[(x,y)] == event.widget:
+                    xSpot=x
+                    ySpot=y
+        
+        if (destroyerButton.value==True):
+            if (rotationButton.value == 'e'):
+                if (xSpot == 7):
+                    buttonsD[(xSpot,ySpot)].configure(bg="red")
+                    buttonsD[(xSpot,ySpot)].value=False
+                else:
+                    inv=False
+                    for i in range (0,2):    
+                        if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
+                            inv=True
+                            
+                    if(inv!=True):
+                        buttonsD[(xSpot,ySpot)].value=True
                     else:
-                        newState = self.currentState + (i+1,)
-                        newState = tuple(sorted(newState))
-                    break
+                        buttonsD[(xSpot,ySpot)].value=False
+                        err.configure(text="No intersecting ships!")
+                        
+                    buttonsD[(xSpot,ySpot)].configure(text="X")
+                    buttonsD[(xSpot+1,ySpot)].configure(text="X")                     
+    
+            else:
+                if (ySpot == 7):
+                    buttonsD[(xSpot,ySpot)].configure(bg="red")
+                    buttonsD[(xSpot,ySpot)].value=False
+                else:
+                    inv=False
+                    for i in range (0,2):    
+                        if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
+                            inv=True
+                            
+                    if(inv!=True):
+                        buttonsD[(xSpot,ySpot)].value=True
+                    else:
+                        buttonsD[(xSpot,ySpot)].value=False
+                        err.configure(text="No intersecting ships!")
+                        
+                    buttonsD[(xSpot,ySpot)].configure(text="X")
+                    buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                
+        elif (cruiserButton.value==True):
+            if (rotationButton.value == 'e'):
+                if (xSpot >= 6):
+                    buttonsD[(xSpot,ySpot)].value=False
+                    buttonsD[(xSpot,ySpot)].configure(bg="red")
+                    if(xSpot < 7):
+                        buttonsD[(xSpot+1,ySpot)].configure(bg="red")
+                else:
+                    inv=False
+                    for i in range (0,3):    
+                        if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
+                            inv=True
+                            
+                    if(inv!=True):
+                        buttonsD[(xSpot,ySpot)].value=True
+                    else:
+                        buttonsD[(xSpot,ySpot)].value=False
+                        err.configure(text="No intersecting ships!")
+                        
+                    buttonsD[(xSpot,ySpot)].value=True
+                    buttonsD[(xSpot,ySpot)].configure(text="X")
+                    buttonsD[(xSpot+1,ySpot)].configure(text="X")
+                    buttonsD[(xSpot+2,ySpot)].configure(text="X")
+                    
+            else:
+                if (ySpot >= 6):
+                    buttonsD[(xSpot,ySpot)].value=False
+                    buttonsD[(xSpot,ySpot)].configure(bg="red")
+                    if(ySpot < 7):
+                        buttonsD[(xSpot,ySpot+1)].configure(bg="red")
+                else:
+                    inv=False
+                    for i in range (0,3):    
+                        if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
+                            inv=True
+                            
+                    if(inv!=True):
+                        buttonsD[(xSpot,ySpot)].value=True
+                    else:
+                        buttonsD[(xSpot,ySpot)].value=False
+                        err.configure(text="No intersecting ships!")
+                        
+                    buttonsD[(xSpot,ySpot)].value=True
+                    buttonsD[(xSpot,ySpot)].configure(text="X")
+                    buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                    buttonsD[(xSpot,ySpot+2)].configure(text="X")
+                
+        if (battleButton.value==True):
+            if (rotationButton.value == 'e'):
+                if (xSpot >= 5):
+                    buttonsD[(xSpot,ySpot)].value=False
+                    buttonsD[(xSpot,ySpot)].configure(bg="red")
+                    if(xSpot <7):
+                        buttonsD[(xSpot+1,ySpot)].configure(bg="red")
+                        if(xSpot < 6):
+                            buttonsD[(xSpot+2,ySpot)].configure(bg="red")
+                else:
+                    inv=False
+                    for i in range (0,4):    
+                        if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
+                            inv=True
+                            
+                    if(inv!=True):
+                        buttonsD[(xSpot,ySpot)].value=True
+                    else:
+                        buttonsD[(xSpot,ySpot)].value=False
+                        err.configure(text="No intersecting ships!")
+                        
+                    buttonsD[(xSpot,ySpot)].value=True
+                    buttonsD[(xSpot,ySpot)].configure(text="X")
+                    buttonsD[(xSpot+1,ySpot)].configure(text="X")
+                    buttonsD[(xSpot+2,ySpot)].configure(text="X")
+                    buttonsD[(xSpot+3,ySpot)].configure(text="X")
+                
+            else:
+                if (ySpot >= 5):
+                    buttonsD[(xSpot,ySpot)].value=False
+                    buttonsD[(xSpot,ySpot)].configure(bg="red")
+                    if(ySpot <7):
+                        buttonsD[(xSpot,ySpot+1)].configure(bg="red")
+                        if(ySpot<6):
+                            buttonsD[(xSpot,ySpot+2)].configure(bg="red")
+                else:
+                    inv=False
+                    for i in range (0,4):    
+                        if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
+                            inv=True
+                            
+                    if(inv!=True):
+                        buttonsD[(xSpot,ySpot)].value=True
+                    else:
+                        buttonsD[(xSpot,ySpot)].value=False
+                        err.configure(text="No intersecting ships!")
+                        
+                    buttonsD[(xSpot,ySpot)].value=True
+                    buttonsD[(xSpot,ySpot)].configure(text="X")
+                    buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                    buttonsD[(xSpot,ySpot+2)].configure(text="X")
+                    buttonsD[(xSpot,ySpot+3)].configure(text="X")
+                
+        if (carrierButton.value==True):
+                if (rotationButton.value == 'e'):
+                    if (xSpot >= 4):
+                        buttonsD[(xSpot,ySpot)].value=False
+                        buttonsD[(xSpot,ySpot)].configure(bg="red")
+                        if(xSpot<7):
+                            buttonsD[(xSpot+1,ySpot)].configure(bg="red")
+                            if(xSpot<6):
+                                buttonsD[(xSpot+2,ySpot)].configure(bg="red")
+                                if(xSpot<5):
+                                    buttonsD[(xSpot+3,ySpot)].configure(bg="red")
+                
+                    else:
+                        inv=False
+                        for i in range (0,5):    
+                            if (buttonsD[(xSpot+i,ySpot)].cget('text')=="X"):
+                                inv=True
+                                
+                        if(inv!=True):
+                            buttonsD[(xSpot,ySpot)].value=True
+                        else:
+                            buttonsD[(xSpot,ySpot)].value=False
+                            err.configure(text="No intersecting ships!")
+                        
+                        buttonsD[(xSpot,ySpot)].value=True
+                        buttonsD[(xSpot,ySpot)].configure(text="X")
+                        buttonsD[(xSpot+1,ySpot)].configure(text="X")
+                        buttonsD[(xSpot+2,ySpot)].configure(text="X")
+                        buttonsD[(xSpot+3,ySpot)].configure(text="X")
+                        buttonsD[(xSpot+4,ySpot)].configure(text="X")
+                        
+                else:
+                    if (ySpot >= 4):
+                        buttonsD[(xSpot,ySpot)].value=False
+                        buttonsD[(xSpot,ySpot)].configure(bg="red")
+                        if(ySpot < 7):
+                            buttonsD[(xSpot,ySpot+1)].configure(bg="red")
+                            if(ySpot < 6):
+                                buttonsD[(xSpot,ySpot+2)].configure(bg="red")
+                                if(ySpot < 5):
+                                    buttonsD[(xSpot,ySpot+3)].configure(bg="red")
+                    else:
+                        inv=False
+                        for i in range (0,5):    
+                            if (buttonsD[(xSpot,ySpot+i)].cget('text')=="X"):
+                                inv=True
+                                
+                        if(inv!=True):
+                            buttonsD[(xSpot,ySpot)].value=True
+                        else:
+                            buttonsD[(xSpot,ySpot)].value=False
+                            err.configure(text="No intersecting ships!")
+                            
+                        buttonsD[(xSpot,ySpot)].value=True
+                        buttonsD[(xSpot,ySpot)].configure(text="X")
+                        buttonsD[(xSpot,ySpot+1)].configure(text="X")
+                        buttonsD[(xSpot,ySpot+2)].configure(text="X")
+                        buttonsD[(xSpot,ySpot+3)].configure(text="X")
+                        buttonsD[(xSpot,ySpot+4)].configure(text="X")
+            
+    
+#Mouse leaves a cell in the board ship placement grid
+def onDClickL(event):
+    if(subBut.complete != True):
+        xSpot=0
+        ySpot=0
+        for y in range(0,8):
+            for x in range (0,8):
+                if buttonsD[(x,y)] == event.widget:
+                    xSpot=x
+                    ySpot=y
+        
+        if (destroyerButton.value==True):
+            if (rotationButton.value == 'e'):
+                if (xSpot == 7):
+                    buttonsD[(xSpot,ySpot)].configure(bg="white")
+                else:
+                    if (buttonsD[(xSpot,ySpot)].set != True):
+                        buttonsD[(xSpot,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot+1,ySpot)].set != True):
+                        buttonsD[(xSpot+1,ySpot)].configure(text="")          
+                    err.configure(text="")
+                    
+            
+            else:
+                if (ySpot == 7):
+                    buttonsD[(xSpot,ySpot)].configure(bg="white")
+                else:
+                    if (buttonsD[(xSpot,ySpot)].set != True):
+                        buttonsD[(xSpot,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot,ySpot+1)].set != True):
+                        buttonsD[(xSpot,ySpot+1)].configure(text="")
+                    err.configure(text="")
+                
+        elif (cruiserButton.value==True):
+            if (rotationButton.value == 'e'):
+                if (xSpot >= 6):
+                    buttonsD[(xSpot,ySpot)].configure(bg="white")
+                    if(xSpot < 7):
+                        buttonsD[(xSpot+1,ySpot)].configure(bg="white")
+                else:
+                    
+                    if (buttonsD[(xSpot,ySpot)].set != True):
+                        buttonsD[(xSpot,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot+1,ySpot)].set != True):
+                        buttonsD[(xSpot+1,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot+2,ySpot)].set != True):
+                        buttonsD[(xSpot+2,ySpot)].configure(text="")
+                    err.configure(text="")
+                    
+            else:
+                if (ySpot >= 6):
+                    buttonsD[(xSpot,ySpot)].configure(bg="white")
+                    if(ySpot < 7):
+                        buttonsD[(xSpot,ySpot+1)].configure(bg="white")
+                else:
+                    if (buttonsD[(xSpot,ySpot)].set != True):
+                        buttonsD[(xSpot,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot,ySpot+1)].set != True):
+                        buttonsD[(xSpot,ySpot+1)].configure(text="")
+                    if (buttonsD[(xSpot,ySpot+2)].set != True):
+                        buttonsD[(xSpot,ySpot+2)].configure(text="")
+                    err.configure(text="")
+                
+        if (battleButton.value==True):
+            if (rotationButton.value == 'e'):
+                if (xSpot >= 5):
+                    buttonsD[(xSpot,ySpot)].configure(bg="white")
+                    if (xSpot < 7):
+                        buttonsD[(xSpot+1,ySpot)].configure(bg="white")
+                        if(xSpot < 6):
+                            buttonsD[(xSpot+2,ySpot)].configure(bg="white")
+                else:
+                    if (buttonsD[(xSpot,ySpot)].set != True):
+                        buttonsD[(xSpot,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot+1,ySpot)].set != True):
+                        buttonsD[(xSpot+1,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot+2,ySpot)].set != True):
+                        buttonsD[(xSpot+2,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot+3,ySpot)].set != True):
+                        buttonsD[(xSpot+3,ySpot)].configure(text="")
+                    err.configure(text="")
+                
+            else:
+                if (ySpot >= 5):
+                    buttonsD[(xSpot,ySpot)].configure(bg="white")
+                    if(ySpot < 7):
+                        buttonsD[(xSpot,ySpot+1)].configure(bg="white")
+                        if(ySpot < 6):
+                            buttonsD[(xSpot,ySpot+2)].configure(bg="white")
+                else:
+                    if (buttonsD[(xSpot,ySpot)].set != True):
+                        buttonsD[(xSpot,ySpot)].configure(text="")
+                    if (buttonsD[(xSpot,ySpot+1)].set != True):
+                        buttonsD[(xSpot,ySpot+1)].configure(text="")
+                    if (buttonsD[(xSpot,ySpot+2)].set != True):
+                        buttonsD[(xSpot,ySpot+2)].configure(text="")
+                    if (buttonsD[(xSpot,ySpot+3)].set != True):
+                        buttonsD[(xSpot,ySpot+3)].configure(text="")
+                    err.configure(text="")
+                
+        if (carrierButton.value==True):
+                if (rotationButton.value == 'e'):
+                    if (xSpot >= 4):
+                        buttonsD[(xSpot,ySpot)].configure(bg="white")
+                        if(xSpot < 7):
+                            buttonsD[(xSpot+1,ySpot)].configure(bg="white")
+                            if(xSpot<6):
+                                buttonsD[(xSpot+2,ySpot)].configure(bg="white")
+                                if(xSpot<5):
+                                    buttonsD[(xSpot+3,ySpot)].configure(bg="white")
+                    
+                    else:
+                        if (buttonsD[(xSpot,ySpot)].set != True):
+                            buttonsD[(xSpot,ySpot)].configure(text="")
+                        if (buttonsD[(xSpot+1,ySpot)].set != True):
+                            buttonsD[(xSpot+1,ySpot)].configure(text="")
+                        if (buttonsD[(xSpot+1,ySpot)].set != True):
+                            buttonsD[(xSpot+2,ySpot)].configure(text="")
+                        if (buttonsD[(xSpot+3,ySpot)].set != True):
+                            buttonsD[(xSpot+3,ySpot)].configure(text="")
+                        if (buttonsD[(xSpot+4,ySpot)].set != True):
+                            buttonsD[(xSpot+4,ySpot)].configure(text="")
+                        err.configure(text="")
+                        
+                else:
+                    if (ySpot >= 4):
+                        buttonsD[(xSpot,ySpot)].configure(bg="white")
+                        if(ySpot < 7):
+                            buttonsD[(xSpot,ySpot+1)].configure(bg="white")
+                            if(ySpot<6):
+                                buttonsD[(xSpot,ySpot+2)].configure(bg="white")
+                                if(ySpot<5):
+                                    buttonsD[(xSpot,ySpot+3)].configure(bg="white")
+                    else:
+                        if (buttonsD[(xSpot,ySpot)].set != True):
+                            buttonsD[(xSpot,ySpot)].configure(text="")
+                        if (buttonsD[(xSpot,ySpot+1)].set != True):
+                            buttonsD[(xSpot,ySpot+1)].configure(text="")
+                        if (buttonsD[(xSpot,ySpot+2)].set != True):
+                            buttonsD[(xSpot,ySpot+2)].configure(text="")
+                        if (buttonsD[(xSpot,ySpot+3)].set != True):
+                            buttonsD[(xSpot,ySpot+3)].configure(text="")
+                        if (buttonsD[(xSpot,ySpot+4)].set != True):
+                            buttonsD[(xSpot,ySpot+4)].configure(text="")
+                        err.configure(text="")
+     
 
-        return newState, reward # return the new state (new state will be equal to old state if a new ship was not sunk) and the reward for entering that state
 
+#Setting up Game Board---------------------------------------------------------------------------------
 
-class Agent:
-    def __init__(self, a, e, world: World):
-        self.alpha = a # learning rate
-        self.epsilon = e # the percent you want to explore
-        self.world = world
-        self.gamma = 0.9
-        self.Q_values = self.createQTable()
-        self.numOfSteps = 0
+#attack buttons/cells
+begX = 135
+begY = 60
 
-    def createQTable(self):
-        QTable = {}
-        for state in self.world.possibleStates:
-            QTable[state] = {}
-            for x in range(self.world.gameHeight):
-                for y in range(self.world.gameWidth):
-                    QTable[state][(x,y)] = 0
+buttonsB = {}
+for yI in range (0,8):
+    for xI in range (0,8):
+        coOrd = (xI,yI)
+        buttonsB[coOrd] = Button(root, width=3,height=1, bg="white", activebackground='#750000', text="")
+        buttonsB[coOrd].place(x=begX+xI*40, y=begY+yI*30)
+        buttonsB[coOrd].value=True
+        buttonsB[coOrd].set=False
+        buttonsB[coOrd].shot=False
+        buttonsB[coOrd].bind("<Button-1>", onAClick)
+        buttonsB[coOrd].bind("<Enter>", onAClickE)
+        buttonsB[coOrd].bind("<Leave>", onAClickL)
 
-        return QTable # returns a dictionary where each key is another dictionary that holds the actions available in that state and the Q-values for each of those actions
+#user placement cells
+begX2 = 135
+begY2 = 450
+buttonsD = {}
+for yI in range (0,8):
+    for xI in range (0,8):
+        coOrd = (xI,yI)
+        buttonsD[coOrd] = Button(root, width=3,height=1, bg="white", activebackground='#bababa', text="")
+        buttonsD[coOrd].place(x=begX2+xI*40, y=begY2+yI*30)
+        buttonsD[coOrd].value=True
+        buttonsD[coOrd].set=False
+        buttonsD[coOrd].bind("<Button-1>", onDClick)
+        buttonsD[coOrd].bind("<Enter>", onDClickE)
+        buttonsD[coOrd].bind("<Leave>", onDClickL)
+        
 
+#Button to change placement to a destroyer
+destroyerButton = Button(root, width=8,height=1, bg="#bababa", activebackground='#bababa', text="Destroyer")
+destroyerButton.place(x=40,y=470)
+destroyerButton.bind("<Button-1>", desClick)
+destroyerButton.value=True
 
-    def getBestAction(self, state): # THIS IS CONSTANTLY CHOOSING THE SAME ACTION
-        maxVal = np.NINF
-        maxAction = None
+#Button to change placement to a cruiser
+cruiserButton = Button(root, width=8,height=1, bg="white", activebackground='#bababa', text="Cruiser")
+cruiserButton.place(x=40,y=510)
+cruiserButton.bind("<Button-1>", cruClick)
+cruiserButton.value=False
 
-        valuesForAllowedActions = []
-        allowedActions = self.world.getPossibleActions()
+#Button to change placement to a battleship
+battleButton = Button(root, width=8,height=1, bg="white", activebackground='#bababa', text="Battle Ship")
+battleButton.place(x=40,y=550)
+battleButton.bind("<Button-1>", batClick)
+battleButton.value=False
 
-        for action in self.world.shotsTaken:
-            if action in allowedActions:
-                allowedActions.remove(action)
+#Button to change placement to a carrier
+carrierButton = Button(root, width=8,height=1, bg="white", activebackground='#bababa', text="Carrier")
+carrierButton.place(x=40,y=590)
+carrierButton.bind("<Button-1>", carClick)
+carrierButton.value=False
 
-        for action in allowedActions:
-            valuesForAllowedActions.append(self.Q_values[state][action])
+#Button to change rotation of placement
+rotationButton =  Button(root, width=4,height=1, bg="white", activebackground='#bababa', text=u"\u2192")
+rotationButton.place(x=55, y = 630)
+rotationButton.bind("<Button-1>", rotate)
+rotationButton.value="e"
 
-        for i in range(len(allowedActions)):
-            if valuesForAllowedActions[i] > maxVal:
-                maxVal = valuesForAllowedActions[i]
-                bestAction = allowedActions[i]
+#Error label for placement
+err = Label(root)
+err.place(x=230,y=420)
 
-        return bestAction # return the optimal action to take from this state
+#Counters for ships placed
+desCount = Label(root, text=4)
+desCount.place(x=110,y=472)
 
-    def chooseAction(self, state):
-        allowedActions = self.world.getPossibleActions()
+cruCount = Label(root, text=3)
+cruCount.place(x=110,y=512)
 
-        for action in self.world.shotsTaken:
-            if action in allowedActions:
-                allowedActions.remove(action)
+batCount = Label(root, text=2)
+batCount.place(x=110,y=552)
 
-        action = None # initializing the return
+carCount = Label(root, text=1)
+carCount.place(x=110,y=592)
 
-        randomNum = np.random.rand()
+#Button for submission
+subBut = Button(root,width=19,height=2, bg="white",activebackground='#bababa', text="Submit Ship Placement")
+subBut.place(x=200,y=700)
+subBut.bind("<Button-1>", subOnClick)
+subBut.bind("<Leave>", subOnL)
+subBut.complete=False
 
-        # this is the epsilon-greedy policy:
-        if(randomNum < self.epsilon):
-            subOptimalActionChoiceIndex = random.randint(0, len(allowedActions) - 1)
-            action = allowedActions[subOptimalActionChoiceIndex]
-        else:
-            action = self.getBestAction(state)
+#Arrary to keep track of user ships
+defArray= Label(root)
+defArray.value=[]
 
-        return action # returns an action that has not been taken before
+#button to clear the board
+clearBut = Button(root,width=10,height=1, bg="white",activebackground='#bababa', text="Clear Board")
+clearBut.place(x=235,y=750)
+clearBut.bind("<Button-1>", clearBoard)
 
-    def Qlearning(self):
-        self.world.currentState = (0,)
-        # visited = []
-        self.world.shotsTaken = []
-        newStateAndReward = None # initialize
-        converged = True # currently not using this
+#label to display info
+aLabel = Label(root)
+aLabel.place(x=180,y=305)
+aLabel.start=False
+aLabel.Uhits=0
+aLabel.Ahits=0
+aLabel.gameDone=False
+aLabel.gameResult=""
+aLabel.clickC=0
 
-        while True: # loop for each step of the episode
-            # Choose A from S using the epislon-greedy policy
-            chosenAction = self.chooseAction(self.world.currentState)
-            # Take A and observe R and S'
-            newStateAndReward = self.world.moveToNewState(chosenAction)
-            newState = newStateAndReward[0]
-            reward = newStateAndReward[1]
-            # visited.append(newState) # say we vsited that state
-            self.numOfSteps += 1
-            # find best action from S'
-            bestAction = self.getBestAction(newState)
+#Agent's board
+agentBoard = brd.Board()
+agentSL = agentBoard.ships
 
-            oldQ = self.Q_values[self.world.currentState][chosenAction]
-
-            # update current state q-value
-            self.Q_values[self.world.currentState][chosenAction] += self.alpha * (reward + self.gamma * self.Q_values[newState][bestAction] - self.Q_values[self.world.currentState][chosenAction]) # perform the update
-
-            if(abs(oldQ - self.Q_values[self.world.currentState][chosenAction]) < 0.001):
-                converged = False
-
-            self.world.currentState = newState
-
-            if self.world.currentState == self.world.goalState: # if the next state is the goal, break
-                return converged #currently not using this
-
-def main():
-    testWorld = World()
-    testAgent = Agent(0.9, 0.01, testWorld)
-
-    for i in range(100):
-        result = testAgent.Qlearning()
-        print(testWorld.shotsTaken) # prints the actions taken in this iteration
-
-
-if __name__ == '__main__':
-    main()
+root.mainloop()
