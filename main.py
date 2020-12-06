@@ -144,9 +144,8 @@ def rotate(event):
 #When the user submits their ship placement
 def subOnClick(event):
     if (desCount.cget('text')==0 and cruCount.cget('text')==0 and batCount.cget('text')==0 and carCount.cget('text')==0 and aLabel.start==False):
+        print(defArray.value)
         aLabel.aAttack = agentAttack.mainAttack(defArray.value)
-        print (aLabel.aAttack)
-        print (len(aLabel.aAttack))
         event.widget.complete=True
         aLabel.configure(text="Time to attack! Choose a cell above to place a missile on that cell")
         aLabel.place(x=120,y=305)
@@ -302,6 +301,10 @@ def onDClick(event):
                 buttonsD[(xSpot+2,ySpot)].set= True
                 buttonsD[(xSpot+3,ySpot)].set= True
                 buttonsD[(xSpot+4,ySpot)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot+1,ySpot),(xSpot+2,ySpot),(xSpot+3,ySpot),(xSpot+4,ySpot)]
+                defArray.value.append(ship)
+                
                 if (carCount.cget('text')==1):
                     carCount.configure(text=0)
             if rotationButton.value =='s' and err.cget('text')!="No intersecting ships!":
@@ -315,6 +318,10 @@ def onDClick(event):
                 buttonsD[(xSpot,ySpot+2)].set= True
                 buttonsD[(xSpot,ySpot+3)].set= True
                 buttonsD[(xSpot,ySpot+4)].set= True
+                
+                ship=[(xSpot,ySpot),(xSpot,ySpot+1),(xSpot,ySpot+2),(xSpot,ySpot+3),(xSpot,ySpot+4)]
+                
+                
                 if (carCount.cget('text')==1):
                     carCount.configure(text=0)
         
