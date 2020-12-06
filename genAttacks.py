@@ -182,7 +182,6 @@ class Agent:
             self.world.currentState = newState
 
 def mainAttack(userBoard, diff):
-    
     if (diff == 1):
         eps = 0.6
     elif (diff==2):
@@ -191,8 +190,6 @@ def mainAttack(userBoard, diff):
         eps = 0.1
     else:
         eps=0.01
-    
-    print(eps)
     
     testWorld = World(userBoard)
     testAgent = Agent(0.9, eps, testWorld)
