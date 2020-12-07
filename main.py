@@ -8,6 +8,9 @@ from tkinter import *
 import board as brd
 import copy
 import genAttacks as agentAttack
+import time
+import os
+import sys
 
 root = Tk()
 root.geometry("560x800")
@@ -140,6 +143,8 @@ def onAClick(event):
                         aLabel.place(x=280,y=305)
                         buttonsB[(xSpot,ySpot)].configure(bg="cyan")
     
+                    #Make agent wait 1/2 second before placing attack
+                    time.sleep(0.5)
                     agentAtt(aLabel.clickC)
     
                     aLabel.clickC +=1
@@ -163,13 +168,29 @@ def onAClickL(event):
             event.widget.configure(bg="white")
 
 #Defensive placement---------------------------------------------------------------------
-def popopWorL(msg):
+
+def restart(event):
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
+
+def close(event):
+    popup.destroy()
+    root.destroy()
+
+def popopWorL(msg):    
+    global popup
     popup = Tk()
     popup.wm_title("!")
     popup.configure(width=200,height=70)
     label = Label(popup, text=msg)
-    label.place(x=15,y=15)
+    label.place(x=18,y=10)
     aLabel.done=True
+    replayBut = Button(popup, width=10,height=1, text="Replay")
+    replayBut.place(x=15,y=37)
+    replayBut.bind("<Button-1>",restart)
+    closeBut = Button(popup, width=10,height=1, text="Exit")
+    closeBut.place(x=100,y=37)
+    closeBut.bind("<Button-1>",close)
     popup.mainloop()
     
 #Function to display if User won or Lost against the Agent
@@ -972,5 +993,6 @@ agentSL = agentBoard.ships
 aLabel.botShips = []
 for ship in agentSL:
     aLabel.botShips.append(ship[:])
+
 
 root.mainloop()
