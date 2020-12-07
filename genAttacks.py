@@ -183,13 +183,13 @@ class Agent:
 
 def mainAttack(userBoard, diff):
     if (diff == 1):
-        eps = 0.6
+        eps = 0.8
     elif (diff==2):
-        eps = 0.3
+        eps = 0.5
     elif (diff==3):
-        eps = 0.1
+        eps = 0.3
     else:
-        eps=0.01
+        eps=0.05
     
     testWorld = World(userBoard)
     testAgent = Agent(0.9, eps, testWorld)

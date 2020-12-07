@@ -47,12 +47,69 @@ def vhardClick(event):
     hardButton.configure(bg="white")
     vhardButton.configure(bg="#bababa")
     aLabel.diff=4
+    
+
+def getShipsLeft(x, y):
+    #mark ship index as hit if hit
+    shipCnt = 0
+    for ship in aLabel.botShips:
+        indCnt = 0
+        for ind in ship:
+            if ind == (x, y):
+                aLabel.botShips[shipCnt][indCnt] = 'hit'
+            indCnt += 1
+        shipCnt += 1
+    
+    #calc number of ships left
+    carriers = 0
+    destroyers = 0
+    battleships = 0
+    cruisers = 0
+    for i in aLabel.botShips:
+        if len(i) == 5:
+            dead = True
+            for coord in i:
+                if coord != 'hit':
+                    dead = False
+            if dead != True:
+                carriers += 1
+        elif len(i) == 4:
+            dead = True
+            for coord in i:
+                if coord != 'hit':
+                    dead = False
+            if dead != True:
+                battleships += 1
+        elif len(i) == 3:
+            dead = True
+            for coord in i:
+                if coord != 'hit':
+                    dead = False
+            if dead != True:
+                cruisers += 1
+        elif len(i) == 2:
+            dead = True
+            for coord in i:
+                if coord != 'hit':
+                    dead = False
+            if dead != True:
+                destroyers += 1
+        eCarrierNum.configure(text = carriers)
+        eBattleshipNum.configure(text = battleships)
+        eCruiserNum.configure(text = cruisers)
+        eDestroyerNum.configure(text = destroyers)
+        
+        
+        
+    
 
 #Event Handler for clicking on an attacking cell
 def onAClick(event):
     if (aLabel.done!=True):
         if(aLabel.gameDone != True):
             if(subBut.complete==True):
+                #take shot
+                
                 aLabel.start=True
                 for y in range(0,8):
                     for x in range (0,8):
@@ -60,8 +117,8 @@ def onAClick(event):
                             xSpot=x
                             ySpot=y
     
-                if (buttonsB[(xSpot,ySpot)].cget('text')!="X"):
-                    buttonsB[(xSpot,ySpot)].configure(text="X")
+                if (buttonsB[(xSpot,ySpot)].cget('text')!="X") or (buttonsB[(xSpot,ySpot)].cget('text')!=" "):
+                    
                     buttonsB[(xSpot,ySpot)].shot=True
                     hit = False
                     for ship in agentSL:
@@ -69,6 +126,7 @@ def onAClick(event):
                             if (xSpot,ySpot) == piece:
                                 hit=True
                     if (hit==True):
+                        buttonsB[(xSpot,ySpot)].configure(text="X")
                         aLabel.configure(text="HIT!")
                         aLabel.place(x=280,y=305)
                         buttonsB[(xSpot,ySpot)].configure(bg="red")
@@ -77,6 +135,7 @@ def onAClick(event):
                             wOrL('w') #You Win
     
                     else:
+                        buttonsB[(xSpot,ySpot)].configure(text=" ")
                         aLabel.configure(text="MISS")
                         aLabel.place(x=280,y=305)
                         buttonsB[(xSpot,ySpot)].configure(bg="cyan")
@@ -84,6 +143,9 @@ def onAClick(event):
                     agentAtt(aLabel.clickC)
     
                     aLabel.clickC +=1
+                    
+                #update number of enemy ship types left
+                getShipsLeft(xSpot, ySpot)
         else:
             if (aLabel.done!=True):
                 aLabel.configure(text="Submit your ship placements below first!")
@@ -868,9 +930,47 @@ aLabel.clickC=0
 aLabel.done=False
 aLabel.diff=0
 
+
+#labels for enemy ships
+eHeader = Label(root)
+eHeader.place(x=460,y=80)
+eHeader.configure(text = 'Enemy Ships')
+
+eCarriers = Label(root)
+eCarriers.place(x=460,y=100)
+eCarriers.configure(text = 'Carriers:')
+eCarrierNum = Label(root)
+eCarrierNum.place(x=510,y=100)
+eCarrierNum.configure(text = 1)
+
+eBattleships = Label(root)
+eBattleships.place(x=460,y=120)
+eBattleships.configure(text = 'Battleships:')
+eBattleshipNum = Label(root)
+eBattleshipNum.place(x=525,y=120)
+eBattleshipNum.configure(text = 2)
+
+eCruisers = Label(root)
+eCruisers.place(x=460,y=140)
+eCruisers.configure(text = 'Cruisers:')
+eCruiserNum = Label(root)
+eCruiserNum.place(x=510,y=140)
+eCruiserNum.configure(text = 3)
+
+
+eDestroyers = Label(root)
+eDestroyers.place(x=460,y=160)
+eDestroyers.configure(text = 'Destroyers:')
+eDestroyerNum = Label(root)
+eDestroyerNum.place(x=520,y=160)
+eDestroyerNum.configure(text = 4)
+
+
 #Agent's board
 agentBoard = brd.Board()
 agentSL = agentBoard.ships
-
+aLabel.botShips = []
+for ship in agentSL:
+    aLabel.botShips.append(ship[:])
 
 root.mainloop()
