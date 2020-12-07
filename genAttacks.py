@@ -5,26 +5,23 @@
 # Possible shots in a state are determined by subtracting the coordinates of the sunk ships from the list of all the coordinates on the board
 # The actions that were already taken are also accounted for when choosing which action to take from a given state
 # Adjusting the learning and exploring rate (exploring rate especially) can allow us to have different difficulties
-# Right now, it prints the list of actions it would take each iteration to get to the goal state (all ships sunk)
+# This program generates a list of actions that the agent will take to get to the goal state (i.e. all ships sunk)
 
 import numpy as np
 import random
-import board as brd
 from itertools import combinations
 import time
 
 class World:
     def __init__(self, userBoard):
-        self.board = brd.Board()
         self.gameHeight = 8
-        self.gameWidth = 8        #[ [(1,2),(1,3),(1,4)], [(3,4),(3,3),(3,2)], [(5,5),(5,6),(5,7)] ]
-        self.playerShipLocations = userBoard
-        #self.playerShipLocations = [[(6, 0), (5, 0), (4, 0), (3, 0), (2, 0)], [(5, 3), (5, 4), (5, 5), (5, 6)], [(1, 7), (1, 6), (1, 5), (1, 4)], [(7, 5), (7, 6), (7, 7)], [(6, 3), (6, 2), (6, 1)], [(1, 1), (1, 2), (1, 3)], [(7, 3), (7, 2)], [(3, 6), (3, 5)], [(3, 2), (3, 1)], [(4, 5), (4, 4)]]
-        self.shotsTaken = []
-        self.possibleStates = self.getPossibleStates()
+        self.gameWidth = 8
+        self.playerShipLocations = userBoard # a list of the locations of ships that the agent will attack
+        self.shotsTaken = [] # initalizes the list of coordinates that will represent the agent's actions throughout the game
+        self.possibleStates = self.getPossibleStates() # will hold a list of the possible states of the game, based on the number of the player's ships
         self.startState = (0,)
-        self.currentState = self.startState
-        self.goalState = self.determineGoalState()
+        self.currentState = self.startState # set the current state to the start state when this program starts
+        self.goalState = self.determineGoalState() # based on the number of player ship's determine what the goal state will look like
 
     def getPossibleStates(self):
         num = 1 # initializes the number of possible states
@@ -49,23 +46,22 @@ class World:
 
         return tuple(goalState)
 
-    def getPossibleActions(self):
+    def getPossibleActions(self): # returns a list of tuples where each tuple is a coordinate on the grid
         possibleActions = []
 
         for x in range(self.gameHeight):
             for y in range(self.gameWidth):
-                #if [x,y] not in self.shotsTaken:
                 possibleActions.append((x,y))
 
-        return possibleActions # this is a list of all the coordinates on the grid
+        return possibleActions
 
-    def moveToNewState(self, action):
+    def moveToNewState(self, action): # based on the current state and the action the agent just took, this function determines if it should move to a new state, and what that state would be
         self.shotsTaken.append(action) # register this actions as taken
         sunkNewShip = True # initalize
         reward = -1 # initalize and will be the reward if the shot is a miss
         newState = self.currentState # initalize
 
-        # this function should check to see if a new ship was sunk and update the state accordingly
+        # this part will check if a new ship was sunk and update the state accordingly
 
         for i in range(len(self.playerShipLocations)):
             if action in self.playerShipLocations[i]: # if we hit a ship
@@ -76,12 +72,12 @@ class World:
                         break
                 #newState = self.currentState + (i+1,) # NEED A NEW WAY TO MOVE TO THE NEXT STATE
                 if sunkNewShip:
-                    reward = 1 # will be the reward if the shot was a hit and a ship was sunk
-                    if self.currentState == self.startState: # still need a better way to move to next state
+                    reward = 1 # will be the reward if the shot was a hit AND a ship was sunk
+                    if self.currentState == self.startState: # if we are in the start state, we need to overwrite the tuple (0,) rather than add to it. The possible next states from the start state are (1,) , (2,) ,(3,) , etc.
                         newState = (i+1,)
-                    else:
+                    else: # otherwise, we can just append the index of the sunken ship to the current state
                         newState = self.currentState + (i+1,)
-                        newState = tuple(sorted(newState))
+                        newState = tuple(sorted(newState)) # we want this representation of the state to be sorted bc of how getPossibleStates works
                     break
 
         return newState, reward # return the new state (new state will be equal to old state if a new ship was not sunk) and the reward for entering that state
@@ -91,12 +87,12 @@ class Agent:
     def __init__(self, a, e, world: World):
         self.alpha = a # learning rate
         self.epsilon = e # the percent you want to explore
-        self.world = world
+        self.world = world # store all the info about the world created in the instance of the World class
         self.gamma = 0.9
-        self.Q_values = self.createQTable()
+        self.Q_values = self.createQTable() # will hold the Q-values for each state-action pair
         self.numOfSteps = 0
 
-    def createQTable(self):
+    def createQTable(self): # the table that holds the Q-values will be set up as a dictionary where each key is a state and the value is another dictionary where each key is an action in that sate and each value is the Q-value for that state-action pair
         QTable = {}
         for state in self.world.possibleStates:
             QTable[state] = {}
@@ -104,44 +100,43 @@ class Agent:
                 for y in range(self.world.gameWidth):
                     QTable[state][(x,y)] = 0
 
-        return QTable # returns a dictionary where each key is another dictionary that holds the actions available in that state and the Q-values for each of those actions
+        return QTable
 
 
-    def getBestAction(self, state): # THIS IS CONSTANTLY CHOOSING THE SAME ACTION
-        maxVal = np.NINF
-        maxAction = None
+    def getBestAction(self, state): # in a Q-learning algorithm, there are multiple times in each iteration when we need to determine the best possible action in a state. This function looks for the greatest value in a state's dictionary
+        maxVal = np.NINF # initalize
+        maxAction = None # initalize
+        valuesForAllowedActions = [] # initalize
+        allowedActions = self.world.getPossibleActions() # initalize a list of all the possible actions (initalizes to all coordinates on the grid)
 
-        valuesForAllowedActions = []
-        allowedActions = self.world.getPossibleActions()
-
-        for action in self.world.shotsTaken:
+        for action in self.world.shotsTaken: # remove any coordinates that have already been chosen from the list of possible actions
             if action in allowedActions:
                 allowedActions.remove(action)
 
-        for action in allowedActions:
+        for action in allowedActions: # grab the Q-value for all of the allowed actions from this state
             valuesForAllowedActions.append(self.Q_values[state][action])
 
-        for i in range(len(allowedActions)):
+        for i in range(len(allowedActions)): # find the allowed action with the highest Q-value for this state
             if valuesForAllowedActions[i] > maxVal:
                 maxVal = valuesForAllowedActions[i]
                 bestAction = allowedActions[i]
 
         return bestAction # return the optimal action to take from this state
 
-    def chooseAction(self, state):
-        allowedActions = self.world.getPossibleActions()
+    def chooseAction(self, state): # this function will select the action that the agent will take in the current state
+        allowedActions = self.world.getPossibleActions() # initalize a list of all the possible actions (initalizes to all coordinates on the grid)
 
-        for action in self.world.shotsTaken:
+        for action in self.world.shotsTaken: # remove any coordinates that have already been chosen from the list of possible actions
             if action in allowedActions:
                 allowedActions.remove(action)
 
         action = None # initializing the return
 
-        randomNum = np.random.rand()
+        randomNum = np.random.rand() # generating a random number to determine if we will choose the optimal action from this state, or explore to find a random action
 
         # this is the epsilon-greedy policy:
-        if(randomNum < self.epsilon):
-            subOptimalActionChoiceIndex = random.randint(0, len(allowedActions) - 1)
+        if(randomNum < self.epsilon): # this is why a higher epislon value will give a higher rate of exloration
+            subOptimalActionChoiceIndex = random.randint(0, len(allowedActions) - 1) # not using np here because the random library was more suitable here
             action = allowedActions[subOptimalActionChoiceIndex]
         else:
             action = self.getBestAction(state)
@@ -190,10 +185,10 @@ def mainAttack(userBoard, diff):
         eps = 0.3
     else:
         eps=0.05
-    
+
     testWorld = World(userBoard)
     testAgent = Agent(0.9, eps, testWorld)
     for i in range(100):
         result = testAgent.Qlearning()
-        
+
     return(testWorld.shotsTaken)
