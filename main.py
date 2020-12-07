@@ -142,9 +142,7 @@ def onAClick(event):
                         aLabel.configure(text="MISS")
                         aLabel.place(x=280,y=305)
                         buttonsB[(xSpot,ySpot)].configure(bg="cyan")
-    
-                    #Make agent wait 1/2 second before placing attack
-                    time.sleep(0.5)
+                        
                     agentAtt(aLabel.clickC)
     
                     aLabel.clickC +=1
