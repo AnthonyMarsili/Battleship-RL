@@ -16,6 +16,7 @@ root = Tk()
 root.geometry("560x800")
 root.minsize(560,800)
 root.maxsize(560,800)
+root.title('BattleShip-RL')
 C = Canvas(root, bg= 'blue', height=800, width=560)
 bgImg = PhotoImage(master = C, file='battleshipBG.png')
 bgLabel = Label(root, image=bgImg)
@@ -176,7 +177,6 @@ def close(event):
     root.destroy()
 
 def popopWorL(msg):    
-    global popup
     popup = Tk()
     popup.wm_title("!")
     popup.configure(width=200,height=70)
