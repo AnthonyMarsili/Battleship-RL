@@ -10,7 +10,6 @@
 import numpy as np
 import random
 from itertools import combinations
-import time
 
 class World:
     def __init__(self, userBoard):
@@ -145,10 +144,8 @@ class Agent:
 
     def Qlearning(self):
         self.world.currentState = (0,)
-        # visited = []
         self.world.shotsTaken = []
         newStateAndReward = None # initialize
-        converged = True # currently not using this
 
         while True: # loop for each step of the episode
             # Choose A from S using the epislon-greedy policy
@@ -157,22 +154,19 @@ class Agent:
             newStateAndReward = self.world.moveToNewState(chosenAction)
             newState = newStateAndReward[0]
             reward = newStateAndReward[1]
-            # visited.append(newState) # say we vsited that state
+
             self.numOfSteps += 1
 
             if newState == self.world.goalState: # if the next state is the goal, break
-                return converged #currently not using this
-            # find best action from S'
+                return
 
+            # find best action from S'
             bestAction = self.getBestAction(newState)
 
             oldQ = self.Q_values[self.world.currentState][chosenAction]
 
             # update current state q-value
             self.Q_values[self.world.currentState][chosenAction] += self.alpha * (reward + self.gamma * self.Q_values[newState][bestAction] - self.Q_values[self.world.currentState][chosenAction]) # perform the update
-
-            if(abs(oldQ - self.Q_values[self.world.currentState][chosenAction]) < 0.001):
-                converged = False
 
             self.world.currentState = newState
 
@@ -186,9 +180,9 @@ def mainAttack(userBoard, diff):
     else:
         eps=0.05
 
-    testWorld = World(userBoard)
-    testAgent = Agent(0.9, eps, testWorld)
+    battleshipWorld = World(userBoard)
+    battleshipAgent = Agent(0.9, eps, battleshipWorld)
     for i in range(100):
-        result = testAgent.Qlearning()
+        result = battleshipAgent.Qlearning()
 
-    return(testWorld.shotsTaken)
+    return(battleshipWorld.shotsTaken)
